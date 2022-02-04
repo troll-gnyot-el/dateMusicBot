@@ -1,3 +1,5 @@
+process.env.NTBA_FIX_319 = 1;
+
 const TelegramApi = require('node-telegram-bot-api'); // импортируем установленный пакет
 const token = "5026626038:AAGlVDusn4QPe6jGW4R41DQaz4J0qUDq1cs"
 
