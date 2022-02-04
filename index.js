@@ -1,8 +1,9 @@
-process.env.NTBA_FIX_319 = 1;
-process.env.PORT = 5050;
+// process.env.NTBA_FIX_319 = 1;
+// process.env.PORT = 5050;
+// prettier
 
-const TelegramApi = require('node-telegram-bot-api'); // импортируем установленный пакет
-const token = "5026626038:AAGlVDusn4QPe6jGW4R41DQaz4J0qUDq1cs"
+const TelegramApi = require("node-telegram-bot-api"); // импортируем установленный пакет
+const token = process.env.TOKEN;
 
 /* Текст приветствия:
 Привет, ${msg.from.first_name}. Я бот для музыкальных знакомств.
@@ -20,29 +21,36 @@ const token = "5026626038:AAGlVDusn4QPe6jGW4R41DQaz4J0qUDq1cs"
 
 // ответы на ругательства
 
-const bot = new TelegramApi(token, {polling: true}) // выяснить, что значит эта опция и какие ещё есть
+const bot = new TelegramApi(token, { polling: true }); // выяснить, что значит эта опция и какие ещё есть
 
 bot.setMyCommands([
-    {command: '/start', description: 'Зауск описания бота'},
-    {command: '/put', description: 'Изменить музыкальные предпочтения'},
-    {command: '/find', description: 'Найти совпадающих няш'},
-])
+  { command: "/start", description: "Зауск описания бота" },
+  { command: "/put", description: "Изменить музыкальные предпочтения" },
+  { command: "/find", description: "Найти совпадающих няш" },
+]);
 
 // const start = async () => {
-    // прослушка событий в боте
-    bot.on('message', msg => { // event and listener - is a function callback
-        const text = msg.text;
-        const chatId = msg.chat.id;
+// прослушка событий в боте
+bot.on("message", async (msg) => {
+  // event and listener - is a function callback
+  const text = msg.text;
+  const chatId = msg.chat.id;
 
-        if (text === '/start') {
-            console.log(msg)
-            // асинхронные функции
-            /* await */ bot.sendSticker(chatId, 'https://tlgrm.ru/_/stickers/1ab/07f/1ab07fbe-1f8a-3d63-a897-75c73f22c536/6.webp');
-            return bot.sendMessage(chatId, `Алоха, ${msg.from.first_name}. Я бот для музыкальных знакомств.\nИщешь, с кем пойти на концерт любимой группы?\nА может у тебя очень редкие вкусы в музыке и ты ищешь такого же единорога?\nЯ предложу тебе соискателей, а дальше сами разбирайтесь в своих человеческих заморочках.\n\nЧтобы поиск был наиболее точным, настрой свои данные, вызвав команду /put.\nЕсли не станешь добавлять информацию, я смогу порекомендовать только таких же людей-загадок, как ты.\nЧтобы получить новый контакт, вызови команду /find.`);
-        }
+  if (text === "/start") {
+    console.log(msg);
+    // асинхронные функции
+    await bot.sendSticker(
+      chatId,
+      "https://tlgrm.ru/_/stickers/1ab/07f/1ab07fbe-1f8a-3d63-a897-75c73f22c536/6.webp"
+    );
+    return bot.sendMessage(
+      chatId,
+      `Алоха, ${msg.from.first_name}. Я бот для музыкальных знакомств.\nИщешь, с кем пойти на концерт любимой группы?\nА может у тебя очень редкие вкусы в музыке и ты ищешь такого же единорога?\nЯ предложу тебе соискателей, а дальше сами разбирайтесь в своих человеческих заморочках.\n\nЧтобы поиск был наиболее точным, настрой свои данные, вызвав команду /put.\nЕсли не станешь добавлять информацию, я смогу порекомендовать только таких же людей-загадок, как ты.\nЧтобы получить новый контакт, вызови команду /find.`
+    );
+  }
 
-        if (text === '/put') {
-            /* Выдаём сообщение со списком возможных настроек профиля
+  if (text === "/put") {
+    /* Выдаём сообщение со списком возможных настроек профиля
                 /newArtist
 
                 /deletArtist
@@ -56,55 +64,54 @@ bot.setMyCommands([
                 /searchResolve
             */
 
-            return bot.sendMessage(chatId, `Ты написал мне ${text}`);
-        }
+    return bot.sendMessage(chatId, `Ты написал мне ${text}`);
+  }
 
-        if (text === '/addArtist') {
+  if (text === "/addArtist") {
+    //  Ты можешь добавить артистов по одному или списком, через пробел.\n
+    //  Обязательно проверь правильность написания сценического имени
+    //  каждого музыканта/коллектива. Если допустишь ошибку, я не смогу
+    //  предоставить тебе соискателей по \n Я приведу все имена к нижнему (верхнему?) регистру,
+    //  чтобы сократить вероятность дублирования имён.
 
-            //  Ты можешь добавить артистов по одному или списком, через пробел.\n
-            //  Обязательно проверь правильность написания сценического имени
-            //  каждого музыканта/коллектива. Если допустишь ошибку, я не смогу
-            //  предоставить тебе соискателей по \n Я приведу все имена к нижнему (верхнему?) регистру,
-            //  чтобы сократить вероятность дублирования имён.
+    bot.sendMessage(chatId, ` `);
+    // обработка исполнителей - удаление лишних пробелов и знаков препинания,
+    // всё в нижний (или верхний) регистр
 
-            bot.sendMessage(chatId, ` `);
-            // обработка исполнителей - удаление лишних пробелов и знаков препинания,
-            // всё в нижний (или верхний) регистр
+    return bot.sendMessage(chatId, `Ты написал мне ${text}`);
+  }
 
+  if (text === "/deletArtist") {
+    // Удалять кнопками (чекбоксы)? (можно цифрами, но это не красиво)
+    return bot.sendMessage(chatId, `Ты написал мне ${text}`);
+  }
 
-            return bot.sendMessage(chatId, `Ты написал мне ${text}`);
-        }
+  if (text === "/myProfile") {
+    return bot.sendMessage(chatId, `Ты написал мне ${text}`);
+  }
 
-        if (text === '/deletArtist') {
-            // Удалять кнопками (чекбоксы)? (можно цифрами, но это не красиво)
-            return bot.sendMessage(chatId, `Ты написал мне ${text}`);
-        }
+  if (text === "/deletAll") {
+    return bot.sendMessage(chatId, `Твой список исполнителей пуст`);
+  }
 
-        if (text === '/myProfile') {
-
-            return bot.sendMessage(chatId, `Ты написал мне ${text}`);
-        }
-
-        if (text === '/deletAll') {
-
-            return bot.sendMessage(chatId, `Твой список исполнителей пуст`);
-        }
-
-        if (text === '/searchResolve') {
-            /*
+  if (text === "/searchResolve") {
+    /*
                 // сделать кнопку смены разрешения поиска
 
                 /searchBan
 
                 /searchResolve
             */
-            return bot.sendMessage(chatId, `Ты написал мне ${text}`);
-        }
+    return bot.sendMessage(chatId, `Ты написал мне ${text}`);
+  }
 
-        if (text === '/find') {
-            return bot.sendMessage(chatId,'Тебе подходит только твоя правая рука');
-        }
-        return bot.sendMessage(chatId, 'Меня интересуют только сообщения по делу, не отвлекай меня попусту.')
-    })
-//}
+  if (text === "/find") {
+    return bot.sendMessage(chatId, "Тебе подходит только твоя правая рука");
+  }
+  return bot.sendMessage(
+    chatId,
+    "Меня интересуют только сообщения по делу, не отвлекай меня попусту."
+  );
+});
+// }
 // start()
