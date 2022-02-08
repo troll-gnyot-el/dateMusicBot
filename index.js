@@ -1,5 +1,5 @@
 // process.env.NTBA_FIX_319 = 1;
-// process.env.PORT = 5050;
+// process.env.PORT = 5000;
 // prettier
 
 const TelegramApi = require("node-telegram-bot-api"); // импортируем установленный пакет
