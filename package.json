@@ -1,16 +1,25 @@
 {
-  "name": "DateMusicBot",
+  "name": "date-music-bot",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "bot/index.js",
+  "type": "module",
   "scripts": {
-    "dev": "nodemon index.js",
-    "start": "node index.js"
+    "start": "concurrently \"node bot/server.js\" \"npm run start-client\"",
+    "start-client": "node bot/index.js",
+    "dev": "concurrently \"nodemon bot/server.js\" \"npm run dev-client\"",
+    "dev-client": "nodemon bot/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.20.2",
+    "concurrently": "^8.2.2",
+    "disconnect": "^1.2.2",
+    "express": "^4.18.2",
+    "mysql2": "^3.6.3",
+    "node-fetch": "^3.3.2",
     "node-telegram-bot-api": "^0.56.0",
     "nodemon": "^2.0.15",
     "prettier": "^2.5.1"
