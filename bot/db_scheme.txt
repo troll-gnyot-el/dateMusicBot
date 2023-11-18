@@ -1,2 +1,5 @@
-user
-column: id, name, gender, favoriteArtists, searchResolving
+Users
+columns: id, name, gender, favoriteArtists, searchResolving
+
+FavoriteArtists
+columns: userId, artistName
