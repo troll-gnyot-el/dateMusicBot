@@ -36,7 +36,6 @@ app.post("/saveData", (req, res) => {
   });
 });
 
-
 app.get("/checkUser/:userId", (req, res) => {
   const userId = req.params.userId;
 
@@ -77,16 +76,54 @@ app.post("/addUser", (req, res) => {
 
 app.post("/searchResolving", (req, res) => {
   const searchResolving = req.body.searchResolving;
+  const usr = req.body.id;
 
-  const sql = "INSERT INTO Users (searchResolving) VALUES (?)";
+  const sql = "UPDATE Users SET searchResolving = ? WHERE id = ?";
 
-  connection.query(sql, [searchResolving], (err, results) => {
+  connection.query(sql, [searchResolving, usr], (err, results) => {
     if (err) {
       console.error("Error searchResolving:", err);
       res.status(500).send("Internal Server Error searchResolving");
     } else {
       console.log("searchResolving successfully:", results);
       res.status(200).send("searchResolving successfully");
+    }
+  });
+});
+
+app.post("/deleteAllArtists", (req, res) => {
+  const usr = req.body.id;
+
+  const sql = "DELETE FROM FavoriteArtists WHERE userId = ?";
+
+  connection.query(sql, [usr], (err, results) => {
+    if (err) {
+      console.error("Error deleteAllArtists:", err);
+      res.status(500).send("Internal Server Error searchResolving");
+    } else {
+      console.log("deleteAllArtists successfully:", results);
+      res.status(200).send("deleteAllArtists successfully");
+    }
+  });
+});
+
+app.get("/getUserSearchResolving/:userId", (req, res) => {
+  const usr = req.params.userId;
+
+  const sql = "SELECT searchResolving FROM Users WHERE id = ?";
+
+  connection.query(sql, [usr], (err, results) => {
+    if (err) {
+      console.error("Error getting user SearchResolving:", err);
+      res.status(500).send("getUserSearchResolving Internal Server Error");
+    } else {
+      if (results.length > 0) {
+        res
+          .status(200)
+          .json({ SearchResolvingExists: true, userData: results });
+      } else {
+        res.status(200).json({ SearchResolvingExists: false });
+      }
     }
   });
 });
@@ -102,7 +139,9 @@ app.get("/getUserFavoriteArtists/:userId", (req, res) => {
       res.status(500).send("getUserFavoriteArtists Internal Server Error");
     } else {
       if (results.length > 0) {
-        res.status(200).json({ favoriteArtistsExists: true, userData: results });
+        res
+          .status(200)
+          .json({ favoriteArtistsExists: true, userData: results });
       } else {
         res.status(200).json({ favoriteArtistsExists: false });
       }

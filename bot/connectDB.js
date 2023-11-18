@@ -39,7 +39,7 @@ export const getUserFavoriteArtists = async (userId) => {
     })
     .then((data) => {
       console.log("Get getUserFavoriteArtists created:", data);
-      return data
+      return data;
     })
     .catch((error) => {
       console.error("Fetch getUserFavoriteArtists error:", error);
@@ -61,8 +61,8 @@ export const postUserFavoriteArtists = async (usr, artist) => {
           `HTTP postUserFavoriteArtists error! Status: ${response.status}`
         );
       }
-      console.log('response', response)
-      return response.json();
+      console.log("response", response);
+      return response /*.json()*/;
     })
     .then((data) => {
       console.log("Post postUserFavoriteArtists created:", data);
@@ -70,7 +70,7 @@ export const postUserFavoriteArtists = async (usr, artist) => {
     })
     .catch((error) => {
       console.error("Fetch postUserFavoriteArtists error:", error);
-      return 0
+      return 0;
     });
 };
 
@@ -86,8 +86,7 @@ export const postAddUser = async (id, searchResolving, name, gender) => {
       if (!response.ok) {
         throw new Error(`HTTP postAddUser error! Status: ${response.status}`);
       }
-      console.log('postAddUser', postAddUser)
-      return response.json();
+      return response /*.json()*/;
     })
     .then((data) => {
       console.log("Post postAddUser created:", data);
@@ -95,28 +94,79 @@ export const postAddUser = async (id, searchResolving, name, gender) => {
     })
     .catch((error) => {
       console.error("Fetch postAddUser error:", error);
-      return 0
+      return 0;
     });
 };
 
-export const postUserSearchResolving = async (searchResolving) => {
+export const postDeleteAllArtists = async (id) => {
+  fetch("http://localhost:3000/deleteAllArtists", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id }),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(
+          `HTTP deleteAllArtists error! Status: ${response.status}`
+        );
+      }
+      return response /*.json()*/;
+    })
+    .then((data) => {
+      console.log("Post deleteAllArtists created:", data);
+      return data;
+    })
+    .catch((error) => {
+      console.error("Fetch deleteAllArtists error:", error);
+      return 0;
+    });
+};
+
+export const postUserSearchResolving = async (id, searchResolving) => {
   fetch("http://localhost:3000/searchResolving", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ searchResolving }),
+    body: JSON.stringify({ searchResolving, id }),
   })
     .then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-      return response.json();
+      return response /*.json()*/;
     })
     .then((data) => {
       console.log("Post created:", data);
     })
     .catch((error) => {
       console.error("Fetch error:", error);
+    });
+};
+
+export const getUserSearchResolving = async (userId) => {
+  return await fetch(`http://localhost:3000/getUserSearchResolving/${userId}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(
+          `HTTP getUserFavoriteArtists error! Status: ${response.status}`
+        );
+      }
+      return response.json();
+    })
+    .then((data) => {
+      console.log("Get getUserFavoriteArtists created:", data);
+      return data;
+    })
+    .catch((error) => {
+      console.error("Fetch getUserFavoriteArtists error:", error);
+      return {};
     });
 };

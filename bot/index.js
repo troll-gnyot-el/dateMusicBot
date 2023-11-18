@@ -1,4 +1,4 @@
-import fs from "fs";
+import { setFavoriteArtistsList } from "./setFavoriteArtistsList.js";
 
 process.env.NTBA_FIX_319 = "1";
 process.env.PORT = "5000";
@@ -6,9 +6,9 @@ process.env.PORT = "5000";
 import TelegramApi from "node-telegram-bot-api";
 import {
   postUserFavoriteArtists,
-  getUserFavoriteArtists,
-  getCheckUser,
-  postAddUser,
+  postUserSearchResolving,
+  getUserSearchResolving,
+  postDeleteAllArtists,
 } from "./connectDB.js";
 import Discogs from "disconnect";
 
@@ -22,16 +22,16 @@ const discogsToken = "exJyALfyinrNEhljGZgujJDMigiHzUnjaCAfhFLD";
 // ответы на ругательства
 
 const bot = new TelegramApi(token, { polling: true });
-const dis = new Discogs.Client({ userToken: discogsToken }).database();
+// const dis = new Discogs.Client({ userToken: discogsToken }).database();
 
 bot.on("polling_error", (msg) => console.log(msg));
 
 bot
   .setMyCommands([
     { command: "/start", description: "Запуск описания бота" },
-    { command: "/settings", description: "Изменить музыкальные предпочтения" },
+    { command: "/settings", description: "Настройки твоего профиля" },
     { command: "/find", description: "Найти совпадающих няш" },
-    { command: "/addartist", description: "Добавить любимого исполнителя" },
+    // { command: "/add_artist", description: "Добавить любимого исполнителя" },
   ])
   .catch((e) => console.log("setMyCommands err", e));
 
@@ -41,20 +41,11 @@ bot.on("message", async (msg) => {
   const text = msg.text;
   const chatId = msg.chat.id;
   const userId = msg.from.id;
+  // const userName = msg.from.username;
+  let buttons = {};
+  userArtists = setFavoriteArtistsList(userId);
 
   if (text === "/start") {
-    const isUsrExist = await getCheckUser(userId);
-    if (!isUsrExist.userExists) {
-      await postAddUser(userId, 1, msg.from.first_name, "all");
-    } else {
-      userArtists = await getUserFavoriteArtists(userId);
-      userArtists =
-        userArtists?.userData?.map((el) => {
-          return el.artistName;
-        }) ?? [];
-      console.log("userArtists", userArtists);
-    }
-
     await bot.sendSticker(
       chatId,
       "https://tlgrm.ru/_/stickers/1ab/07f/1ab07fbe-1f8a-3d63-a897-75c73f22c536/6.webp"
@@ -73,48 +64,62 @@ bot.on("message", async (msg) => {
   }
 
   if (text === "/settings") {
-    /* Выдаём сообщение со списком возможных настроек профиля
-                /addArtist
-
-                /deletArtist
-
-                /deletAll
-
-                /myAtists
-
-                /searchBan
-
-                /searchResolve
-            */
-
-    return bot.sendMessage(chatId, `Ты написал мне ${text}`);
+    return bot.sendMessage(
+      chatId,
+      `Ты можешь воспользоваться следующими настройками:
+/add_artist - добавить исполнителя в список любимых
+/delete_artist - удалить исполнителя из списка любимых
+/delete_all - полностью очистить список любимых исполнителей
+/search_resolving - активировать/деактивировать аккаунт`
+    );
   }
 
-  if (text === "/deletArtist") {
+  if (text === "/delete_artist") {
     // Удалять кнопками (чекбоксы)
     // userArtists.map => return [buttons]
 
     return bot.sendMessage(chatId, `Ты написал мне ${text}`);
   }
 
-  if (text === "/myProfile") {
-    return bot.sendMessage(chatId, `Ты написал мне ${text}`);
+  // if (text === "/myProfile") {
+  //   return bot.sendMessage(chatId, `Ты написал мне ${text}`);
+  // }
+
+  if (text === "/delete_all") {
+    return bot.sendMessage(
+      chatId,
+      "Ты уверен, что хочешь полностью очистить список своих любимых групп?\n" +
+        "Ты сможешь добавить новых фаворитов, если введёшь /add_artist",
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "Да", callback_data: "confirm_delete_all_yes" }],
+            [{ text: "Нет", callback_data: "confirm_delete_all_no" }],
+          ],
+        },
+      }
+    );
   }
 
-  if (text === "/deletAll") {
-    userArtists = [];
-    return bot.sendMessage(chatId, `Твой список исполнителей пуст`);
-  }
+  if (text === "/search_resolving") {
+    buttons = {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "Включить поиск",
+              callback_data: "on_searching",
+            },
+            {
+              text: "Отключить поиск",
+              callback_data: "off_searching",
+            },
+          ],
+        ],
+      },
+    };
 
-  if (text === "/searchResolving") {
-    /*
-                // сделать кнопку смены разрешения поиска
-
-                /searchBan
-
-                /searchResolve
-            */
-    return bot.sendMessage(chatId, `Ты написал мне ${text}`);
+    return bot.sendMessage(chatId, `Хочешь продолжать поиск?`, buttons);
   }
 
   if (text === "/find") {
@@ -139,7 +144,7 @@ bot.on("message", async (msg) => {
     } else {
       await bot.sendMessage(
         chatId,
-        "Добавь хотя бы одного исполнителя с помощью /addArtist, прежде чем использовать /find."
+        "Добавь хотя бы одного исполнителя с помощью /add_artist, прежде чем использовать /find."
       );
     }
 
@@ -147,7 +152,7 @@ bot.on("message", async (msg) => {
   }
 
   return (
-    !text.includes("/addartist") &&
+    !text.includes("/add_artist") &&
     bot.sendMessage(
       chatId,
       "Меня интересуют только сообщения по делу, не отвлекай меня попусту."
@@ -155,7 +160,19 @@ bot.on("message", async (msg) => {
   );
 });
 
-bot.onText(/\/addartist (.+)/, async (msg, match) => {
+bot.onText(/\/add_artist$/, async (msg) => {
+  return await bot.sendMessage(
+    msg.chat.id,
+    `Чтобы добавить исполнителя введи: /add_artist Имя любимого исполнителя
+    
+Пример: /add_artist Bring Me the Horizon
+    
+Рекомендуется проверить, что ты вводишь имя без ошибок.
+    `
+  );
+});
+
+bot.onText(/\/add_artist (.+)/, async (msg, match) => {
   //  Ты можешь добавить артистов по одному.\n
   //  Обязательно проверь правильность написания сценического имени
   //  каждого музыканта/коллектива. Если допустишь ошибку, я не смогу
@@ -165,25 +182,18 @@ bot.onText(/\/addartist (.+)/, async (msg, match) => {
   // обработка исполнителей - удаление лишних пробелов и знаков препинания,
   // всё в верхний регистр
   const chatId = msg.chat.id;
-  const userId = msg.from.id;
+  const artistName = match[1]
+    ?.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
+    ?.replace(/\s+/g, " ")
+    ?.trim()
+    ?.toUpperCase();
 
-  const artistName = match[1]?.trim()?.toUpperCase();
-  console.log("artistName", artistName);
-  console.log("chatId", chatId);
-  console.log("userId", userId);
-  // Добавление исполнителя в список пользователя
-  // if (userArtists) {
-  userArtists = await getUserFavoriteArtists(userId);
-  userArtists =
-    userArtists?.userData?.map((el) => {
-      return el.artistName;
-    }) ?? [];
+  userArtists = await setFavoriteArtistsList(chatId);
 
   if (
     userArtists?.length < 10
     // && "проверка существования такого артиста?"
   ) {
-    // users[userId].favoriteArtists.push(artistName);
     console.log(
       "!userArtists?.includes(artistName)",
       userArtists,
@@ -191,34 +201,100 @@ bot.onText(/\/addartist (.+)/, async (msg, match) => {
       !userArtists?.includes(artistName)
     );
     if (!userArtists?.includes(artistName)) {
-      const res = await postUserFavoriteArtists(userId, artistName);
-      res !== 0 &&
+      const res = await postUserFavoriteArtists(chatId, artistName);
+      userArtists = await setFavoriteArtistsList(chatId);
+      return (
+        res !== 0 &&
         (await bot.sendMessage(
           chatId,
           `Исполнитель ${artistName} добавлен в твой список.`
-        ));
-      userArtists = await getUserFavoriteArtists(userId)?.userData;
-      userArtists =
-        userArtists?.map((el) => {
-          return el.artistName;
-        }) ?? [];
+        ))
+      );
     } else {
-      await bot.sendMessage(
+      return await bot.sendMessage(
         chatId,
         "Данный исполнитель уже есть в твоём списке."
       );
     }
   } else {
-    await bot.sendMessage(
+    return await bot.sendMessage(
       chatId,
-      "Ты уже добавил максимальное количество исполнителей (10)."
+      "Ты уже добавил максимальное количество исполнителей (10). Ты всегда можешь изменить список любимых исполнителей в зависимости от потребностей на данный момент."
     );
   }
-  // } else {
-  //   await bot.sendMessage(chatId, "Для начала используй команду /start.");
-  // }
+});
 
-  // return bot.sendMessage(chatId, `Ты написал мне ${msg}`);
+bot.on("callback_query", async (callbackQuery) => {
+  const data = callbackQuery.data;
+  const chatId = callbackQuery.message.chat.id;
+  userArtists = await setFavoriteArtistsList(chatId);
+
+  if (data === "on_searching") {
+    let searchResolving = await getUserSearchResolving(chatId);
+    searchResolving = searchResolving?.userData?.[0]?.searchResolving;
+    const searchTrue = searchResolving === 1;
+
+    if (!searchTrue) {
+      await postUserSearchResolving(chatId, 1);
+    }
+    return searchTrue
+      ? await bot.sendMessage(
+          chatId,
+          "Ваш профиль уже открыт для поиска другими пользователями бота."
+        )
+      : await bot.sendMessage(
+          chatId,
+          "Теперь ваш профиль открыт для поиска другими пользователями бота. Чтобы найти людей введите /find."
+        );
+  }
+
+  if (data === "off_searching") {
+    let searchResolving = await getUserSearchResolving(chatId);
+    searchResolving = searchResolving?.userData?.[0]?.searchResolving;
+    const searchTrue = searchResolving === 1;
+
+    if (!!searchTrue) {
+      await postUserSearchResolving(chatId, 0);
+    }
+    return !searchTrue
+      ? await bot.sendMessage(
+          chatId,
+          "Ваш профиль уже закрыт для поиска другими пользователями бота."
+        )
+      : await bot.sendMessage(
+          chatId,
+          "Теперь ваш профиль не будет показан другим людям. Чтобы снова начать поиск введите /searchResolving."
+        );
+  }
+
+  if (data === "confirm_delete_all_yes") {
+    if (userArtists.length === 0) {
+      return await bot.sendMessage(chatId, "Список любимых исполнителей пуст.");
+    } else {
+      userArtists = [];
+      const success = await postDeleteAllArtists(chatId);
+      return success !== 0
+        ? await bot.sendMessage(
+            chatId,
+            "Список любимых исполнителей успешно очищен."
+          )
+        : await bot.sendMessage(
+            chatId,
+            "Произошла ошибка при очистке списка любимых исполнителей. Попробуйте повторить действие позже."
+          );
+    }
+  }
+
+  if (data === "confirm_delete_all_no") {
+    return bot.sendMessage(
+      chatId,
+      `Ты можешь воспользоваться следующими настройками:
+/add_artist - добавить исполнителя в список любимых
+/delete_artist - удалить исполнителя из списка любимых
+/delete_all - полностью очистить список любимых исполнителей
+/search_resolving - активировать/деактивировать аккаунт`
+    );
+  }
 });
 
 // Функция для поиска пользователей с похожими списками исполнителей
